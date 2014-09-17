@@ -1,12 +1,11 @@
 /**
  * Created with JetBrains WebStorm.
- * User: Haywood Jablome
+ * User: cm
  * Date: 27.08.14
  * Time: 09:52
  * To change this template use File | Settings | File Templates.
  */
- 
-this.LEDStrip = this.LEDStrip || {};
+this.TweenMaxTest = this.TweenMaxTest || {};
 (function () {
     var Code = function () {
         this.initialize();
@@ -15,7 +14,7 @@ this.LEDStrip = this.LEDStrip || {};
     var p = Code.prototype;
 
     // Place variables here p.variable
-    p.host                  = "LEDStrip";
+    p.host                  = "TweenMaxTest";
     p.canvas                = document.getElementById("mycanvas");
     p.pille_normal_img      = "./images/pille.png";
     p.pille_active_img      = "./images/pille_active.png";
@@ -25,6 +24,7 @@ this.LEDStrip = this.LEDStrip || {};
     p.power                 = 0;
     p.spinTimer             = 0;
     p.spin_btn              = null;
+    p.pos_array_full        = [163,271,379,487,213,321,429];
 
     p._stage                = new createjs.Stage(p.canvas);
     p.active_pills          = [];
@@ -34,7 +34,8 @@ this.LEDStrip = this.LEDStrip || {};
     p.imageObj              = null;
     p.images                = null;
     p.mytween               = createjs.Tween;
-    p.motion_path           = [0,100,200,300,400,500,600];
+    p.pos_obere_reihe       = [163,271,379,487,595,703,811,919,1027];
+    p.pos_untere_reihe      =[213,321,429,537,645,753,861,969];
     p.audioPath             = "./sounds/";
     p.manifest              = [
                                 {id:"wheel",src:"wheel.wav"},
@@ -56,15 +57,22 @@ this.LEDStrip = this.LEDStrip || {};
 
     p.handleFileLoad = function(e)
     {
-        console.log("file load ...");
         var item = e.item;
         var type = e.type;
+        console.log("file load ...");
+        console.log(item);
         if(type == createjs.LoadQueue.IMAGE)
         {
-           this.spin_btn = new createjs.Bitmap(e.item.type);
+           this.spin_btn = new createjs.Bitmap(e.item);
            this._stage.addChild(this.spin_btn);
         }
     }
+
+    p.handleClick= function()
+    {
+        console.log("Spin btn clicked") ;
+    }
+
     p.preloader = function()
     {
         var queue = new createjs.LoadQueue(false);
@@ -127,22 +135,33 @@ this.LEDStrip = this.LEDStrip || {};
     p.initialDraw = function(_canvas)
     {
         try{
-            for(var i = 0; i < 6; i++)
+            for(var i = 0; i < 9; i++)
             {
                 var pille_ac    = new createjs.Bitmap(this.pille_active_img);
                 var pille_out   = new createjs.Bitmap(this.pille_out_img);
                 this.active_pills.push(pille_ac);
                 this.out_pilles.push(pille_out);
-                pille_out.x     = i*100;
+                pille_out.x     = this.pos_obere_reihe[i-1];
+                pille_ac.x      = this.pos_obere_reihe[i-1];
+                if(i%2)
+                {
+                    console.log("i ist " + i);
+                    pille_out.x     = this.pos_untere_reihe[i-1];
+                    pille_ac.x      = this.pos_untere_reihe[i-1];
+                    console.log("pille.x --> " + pille_ac.x);
+                    pille_out.y = 100;
+                    pille_ac.y  = 100;
+                }
                 pille_out.name  = "pille_out"+i;
-                pille_ac.x      = i* 100;
                 pille_ac.name   = "pille" + i;
-//                console.log("My image " + pille_ac);
-//                console.log(pille_ac.name);
-//                console.log(pille_ac);
+                console.log("My image " + pille_ac);
+                console.log(pille_ac.name);
+                console.log(pille_ac);
                 this._stage.addChild(pille_ac);
                 this._stage.addChild(pille_out);
             }
+
+
         }catch (e){
             console.log(e);
 
@@ -171,8 +190,8 @@ this.LEDStrip = this.LEDStrip || {};
           }
            if(iterator%2)
            {
-               speed+=15;
-               console.log("speed++");
+               speed+=10;
+//               console.log("speed++");
            }
 
 
@@ -181,10 +200,11 @@ this.LEDStrip = this.LEDStrip || {};
               iterator = 0;
               out_pilles.reverse();
           }
-        console.log("Counter --> " + counter);
-        if(counter >= 40 )
+//        console.log("Counter --> " + counter);
+        if(counter >= 50 )
         {
-            var my_bb = Math.round((Math.random() * (out_pilles.length - 1)));
+            var my_bb =Math.round((Math.random() * (out_pilles.length - 1)));
+            console.log("my bb --> " + my_bb);
             if(bulb < iterator)
             {
                 console.log("!!! BULB kleiner als ITERATOR");
@@ -198,23 +218,24 @@ this.LEDStrip = this.LEDStrip || {};
                             .wait(30)
                             .to({alpha:1},210);
                         createjs.Sound.play("wheel_cut");
-                        if(--i) myloop(i);
+                        if(iterator != my_bb) myloop(i);
                         else
                         {
-                            createjs.Tween.get(out_pilles[my_bb]).wait(30).to({alpha:0},speed);
-                            console.log(out_pilles[bulb].alpha);
+                            createjs.Tween.get(out_pilles[iterator]).wait(30).to({alpha:0},speed+200);
+                            console.log(out_pilles[my_bb].alpha);
                             createjs.Sound.play("wheel_cut");
+                            out_pilles.splice(my_bb,1);
                         }
                     },speed)
 
-                })(bulb);
+                })(i);
             }
             else
             {
                 console.log("!!! BULB groesser als ITERATOR");
 
                 last_lights = (out_pilles.length - bulb);
-                console.log("Das ist last_lights --> " + "Arr.length: " +out_pilles.length + "-" + " Iterator: " + iterator + " = " + last_lights);
+//                console.log("Das ist last_lights --> " + "Arr.length: " +out_pilles.length + "-" + " Iterator: " + iterator + " = " + last_lights);
                 (function myloop (i){
 
                     setTimeout(function(){
@@ -224,12 +245,13 @@ this.LEDStrip = this.LEDStrip || {};
                             .to({alpha:1},speed);
                         createjs.Sound.play("wheel_cut");
                         iterator++;
-                        if(--i) myloop(i);
+                        if(iterator != my_bb) myloop(i);
                         else
                         {
-                            createjs.Tween.get(out_pilles[my_bb]).wait(30).to({alpha:0},speed);
+                            createjs.Tween.get(out_pilles[my_bb]).wait(30).to({alpha:0},speed+100);
                             createjs.Sound.play("wheel_cut");
-                            console.log(out_pilles[bulb].alpha);
+                            console.log(out_pilles[iterator].alpha);
+                            out_pilles.splice(my_bb,1);
                         }
                     },speed)
 
@@ -289,5 +311,5 @@ this.LEDStrip = this.LEDStrip || {};
 
 
 
-    LEDStrip.Code = Code;
+    TweenMaxTest.Code = Code;
 }());
